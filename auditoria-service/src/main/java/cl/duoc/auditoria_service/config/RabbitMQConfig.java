@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     // Nombres centralizados de RabbitMQ
-    public static final String EVENTOS_EXCHANGE = "pedidos360.eventos.exchange";
+    public static final String EVENTOS_EXCHANGE = "pedidos.exchange";
     public static final String AUDITORIA_QUEUE = "auditoria.pedidos.queue";
     public static final String AUDITORIA_ROUTING_KEY = "pedido.#";
 

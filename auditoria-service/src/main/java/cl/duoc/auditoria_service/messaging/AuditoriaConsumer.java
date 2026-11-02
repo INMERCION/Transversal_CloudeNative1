@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
-
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
@@ -48,13 +47,23 @@ public class AuditoriaConsumer {
                     resultado.getAllErrors());
         }
 
+        String usuario = evento.email() != null
+                && !evento.email().isBlank()
+                ? evento.email()
+                : evento.usuarioId();
+
+        String descripcion =
+                "Evento " + evento.tipoEvento()
+                + " generado por " + evento.servicio()
+                + ". ID del evento: " + evento.eventoId();
+
         log.info("Evento recibido: {}", evento.tipoEvento());
 
         service.registrar(
                 evento.tipoEvento(),
                 evento.pedidoId(),
-                evento.usuario(),
-                evento.descripcion(),
+                usuario,
+                descripcion,
                 evento.fecha()
         );
 

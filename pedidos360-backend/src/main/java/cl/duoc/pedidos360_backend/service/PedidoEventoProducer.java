@@ -1,3 +1,4 @@
+
 package cl.duoc.pedidos360_backend.service;
 
 import java.time.LocalDateTime;
@@ -21,23 +22,36 @@ public class PedidoEventoProducer {
 
     public void publicar(String tipoEvento, String routingKey, Long pedidoId, Jwt jwt) {
         try {
+            if (jwt == null) { // se agregó esta validación para evitar NullPointerException en caso de que no haya un usuario autenticado
+                throw new IllegalArgumentException(
+                        "No existe un usuario autenticado");
+            }
+
+            String usuarioId = jwt.getSubject(); // se obtiene el ID del usuario desde el token JWT
             String email = jwt.getClaimAsString("email");
-            if (email == null) email = jwt.getClaimAsString("username");
+
+            if (email == null || email.isBlank()) { // se obtiene el username si no hay email
+                email = jwt.getClaimAsString("username");
+            }
 
             PedidoEvento evento = new PedidoEvento(
                     UUID.randomUUID().toString(),
                     tipoEvento,
-                    jwt.getSubject(),
+                    usuarioId,
                     email,
                     pedidoId,
                     LocalDateTime.now(),
                     "pedidos360-backend");
 
-            rabbitTemplate.convertAndSend(RabbitNames.EXCHANGE, routingKey, evento);
-            System.out.println("[PRODUCER] Evento publicado: " + tipoEvento + " pedidoId=" + pedidoId);
+            rabbitTemplate.convertAndSend(
+                    RabbitNames.EXCHANGE, routingKey, evento);
+
+            System.out.println("[PRODUCER] Evento publicado: "
+                    + tipoEvento + " pedidoId=" + pedidoId);
+
         } catch (RuntimeException ex) {
-            // La auditoría no debe impedir que el pedido se guarde
-            System.out.println("[PRODUCER] No se pudo publicar " + tipoEvento + ": " + ex.getMessage());
+            System.out.println("[PRODUCER] No se pudo publicar "
+                    + tipoEvento + ": " + ex.getMessage());
         }
     }
 }
