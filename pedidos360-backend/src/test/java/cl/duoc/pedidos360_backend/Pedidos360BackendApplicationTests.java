@@ -1,7 +1,9 @@
 package cl.duoc.pedidos360_backend;
 
 import java.time.Instant;
+
 import cl.duoc.pedidos360_backend.repository.PedidoRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +16,15 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import cl.duoc.pedidos360_backend.service.PedidoEventoProducer;
+import cl.duoc.pedidos360_backend.config.RabbitNames;
 
 @SpringBootTest(properties = {
     "spring.datasource.url=jdbc:h2:mem:pedidos-test;DB_CLOSE_DELAY=-1",
@@ -28,6 +36,7 @@ class Pedidos360BackendApplicationTests {
     @Autowired MockMvc mvc;
     @Autowired PedidoRepository repository;
     @Autowired OAuth2TokenValidator<Jwt> cognitoValidator;
+    @MockitoBean PedidoEventoProducer producer;
     private static final String BODY =
         "{\"cliente\":\" Ana \",\"producto\":\"Notebook\",\"cantidad\":2,\"estado\":\"EN_PREPARACION\"}";
 
@@ -58,6 +67,24 @@ class Pedidos360BackendApplicationTests {
             .andExpect(status().isNotFound());
         assertEquals(0, repository.count());
     }
+
+    @Test void publicaEventosDeAuditoria() throws Exception {
+        mvc.perform(post("/api/pedidos").with(permiso("create"))
+            .contentType(MediaType.APPLICATION_JSON).content(BODY))
+            .andExpect(status().isCreated());
+        Long id = repository.findAll().get(0).getId();
+        verify(producer).publicar(eq("PEDIDO_CREADO"), eq(RabbitNames.RK_CREADO), eq(id), any(Jwt.class));
+
+        mvc.perform(put("/api/pedidos/{id}", id).with(permiso("update"))
+            .contentType(MediaType.APPLICATION_JSON).content(BODY))
+            .andExpect(status().isOk());
+        verify(producer).publicar(eq("PEDIDO_ACTUALIZADO"), eq(RabbitNames.RK_ACTUALIZADO), eq(id), any(Jwt.class));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .delete("/api/pedidos/{id}", id).with(permiso("delete")))
+            .andExpect(status().isNoContent());
+        verify(producer).publicar(eq("PEDIDO_ELIMINADO"), eq(RabbitNames.RK_ELIMINADO), eq(id), any(Jwt.class));
+}
 
     @Test void rechazaSinTokenYTokenMalformado() throws Exception {
         mvc.perform(get("/api/pedidos")).andExpect(status().isUnauthorized());
