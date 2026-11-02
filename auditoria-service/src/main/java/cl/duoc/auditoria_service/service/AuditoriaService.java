@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional(readOnly = true)
@@ -36,7 +38,10 @@ public class AuditoriaService {
     public RegistroAuditoria obtener(Long id) {
         return repository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Registro de auditoría no encontrado"));
+                        new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Registro de auditoría no encontrado"
+                    ));
     }
 
     // Registrar un evento de auditoría
