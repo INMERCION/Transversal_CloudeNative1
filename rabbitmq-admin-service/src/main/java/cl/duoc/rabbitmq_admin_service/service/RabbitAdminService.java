@@ -232,25 +232,50 @@ public class RabbitAdminService {
         }
     }
 
+    
     public void eliminarBinding(BindingRequest request) {
 
-        try {
-            validarBinding(request);
+        // 1. Validar recursos y existencia de cola/exchange
+        validarBinding(request);
 
-            Binding binding = new Binding(
-                    request.queue(),
-                    Binding.DestinationType.QUEUE,
-                    request.exchange(),
-                    request.routingKey(),
-                    null
+        // 2. Comprobar si existe el binding exacto
+        boolean existe = managementService.existeBinding(
+                request.exchange(),
+                request.queue(),
+                request.routingKey()
+        );
+
+        if (!existe) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El binding no existe: "
+                        + request.exchange()
+                        + " -> "
+                        + request.queue()
+                        + " ("
+                        + request.routingKey()
+                        + ")"
             );
+        }
 
+        // 3. Construir el binding
+        Binding binding = new Binding(
+                request.queue(),
+                Binding.DestinationType.QUEUE,
+                request.exchange(),
+                request.routingKey(),
+                null
+        );
+
+        // 4. Eliminar binding en RabbitMQ
+        try {
             rabbitAdmin.removeBinding(binding);
 
         } catch (AmqpException ex) {
             throw errorRabbitMQ(ex);
         }
     }
+
 
     // =====================================================
     // MANEJO DE ERRORES DEL BROKER
