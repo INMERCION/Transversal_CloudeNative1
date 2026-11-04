@@ -1,180 +1,291 @@
 package cl.duoc.rabbitmq_admin_service.service;
 
 import cl.duoc.rabbitmq_admin_service.dto.QueueRequest;
-
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.stereotype.Service;
 import cl.duoc.rabbitmq_admin_service.dto.ExchangeRequest;
-import org.springframework.amqp.core.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import cl.duoc.rabbitmq_admin_service.dto.BindingRequest;
+
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.AmqpException;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RabbitAdminService {
 
     private final RabbitAdmin rabbitAdmin;
+    private final RabbitManagementService managementService;
 
-    public RabbitAdminService(RabbitAdmin rabbitAdmin) {
+    public RabbitAdminService(
+            RabbitAdmin rabbitAdmin,
+            RabbitManagementService managementService) {
+
         this.rabbitAdmin = rabbitAdmin;
+        this.managementService = managementService;
     }
 
-    //Este método crea una cola en RabbitMQ utilizando el nombre proporcionado en el objeto QueueRequest. La cola se declara como duradera (true) para que persista incluso después de reiniciar RabbitMQ.
-    public void crearCola(QueueRequest request) {
-        Queue queue = new Queue(request.name(), true);
-        rabbitAdmin.declareQueue(queue);
-    }
+    // =====================================================
+    // VALIDACIONES GENERALES
+    // =====================================================
 
-    //Este método elimina una cola de RabbitMQ. Antes de eliminar, verifica que el nombre de la cola sea válido y que no sea una cola protegida. Si la cola no existe o no puede eliminarse, lanza una excepción con un estado HTTP 404.   
-    public void eliminarCola(String nombre) {
+    private void validarNombre(String nombre) {
 
-        // 1. Validar el nombre
         if (nombre == null ||
                 !nombre.matches("^[a-zA-Z0-9._-]{1,100}$")) {
 
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Nombre de cola inválido");
+                    "Nombre de recurso inválido");
         }
+    }
 
-        // 2. Proteger las colas de auditoría
+    private void protegerCola(String nombre) {
+
         if (nombre.equals("auditoria.pedidos.queue") ||
                 nombre.equals("auditoria.pedidos.dlq")) {
 
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "No se permite eliminar una cola protegida");
-        }
-
-        // 3. Comprobar si la cola existe
-        if (rabbitAdmin.getQueueProperties(nombre) == null) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "La cola no existe: " + nombre);
-        }
-
-        // 4. Eliminar la cola
-        boolean eliminada = rabbitAdmin.deleteQueue(nombre);
-
-        if (!eliminada) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No se pudo eliminar la cola");
+                    "No se permite modificar una cola protegida");
         }
     }
 
+    private void protegerExchange(String nombre) {
 
-
-    // Este método crea un exchange en RabbitMQ utilizando el nombre y tipo proporcionados en el objeto ExchangeRequest. Dependiendo del tipo de exchange (direct, topic o fanout), se crea la instancia correspondiente y se declara como duradera (true) para que persista incluso después de reiniciar RabbitMQ. Si el tipo de exchange no es válido, lanza una excepción.
-    public void crearExchange(ExchangeRequest request) {
-
-        Exchange exchange;
-
-        switch (request.type().toLowerCase()) {
-            case "direct":
-                exchange = new DirectExchange(request.name(), true, false);
-                break;
-
-            case "topic":
-                exchange = new TopicExchange(request.name(), true, false);
-                break;
-
-            case "fanout":
-                exchange = new FanoutExchange(request.name(), true, false);
-                break;
-
-            default:
-                throw new IllegalArgumentException(
-                    "Tipo de exchange no permitido. Usa direct, topic o fanout");
-        }
-
-        rabbitAdmin.declareExchange(exchange);
-    }
-
-    // Este método elimina un exchange de RabbitMQ. Antes de eliminar, verifica que el nombre del exchange sea válido y que no sea un exchange protegido. Si el exchange no existe o no puede eliminarse, lanza una excepción con un estado HTTP 404.
-    
-    public void eliminarExchange(String nombre) {
-
-        // Validar nombre del exchange
-        if (nombre == null ||
-                !nombre.matches("^[a-zA-Z0-9._-]{1,100}$")) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Nombre de exchange inválido");
-        }
-
-        // Proteger exchanges del sistema
         if (nombre.startsWith("amq.") ||
                 nombre.equals("pedidos.exchange") ||
                 nombre.equals("auditoria.dlx")) {
 
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "No se permite eliminar un exchange protegido: " + nombre);
-        }
-
-        // Eliminar exchange
-        boolean eliminado = rabbitAdmin.deleteExchange(nombre);
-
-        if (!eliminado) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "El exchange no existe o no pudo eliminarse");
+                    "No se permite modificar un exchange protegido");
         }
     }
 
-    // Este método valida un objeto BindingRequest para asegurarse de que los recursos a los que se hace referencia (exchange y queue) cumplan con ciertas condiciones. Verifica que los nombres de exchange y queue comiencen con "prueba.admin." para permitir solo bindings de prueba, y también comprueba que la cola especificada exista en RabbitMQ. Si alguna de estas condiciones no se cumple, lanza una excepción con el estado HTTP correspondiente.
-    private void validarBinding(BindingRequest request) {
+    // =====================================================
+    // ADMINISTRACIÓN DE COLAS
+    // =====================================================
 
-        // Solo permitir cambios en recursos de laboratorio
-        // durante esta etapa de desarrollo.
-        if (!request.exchange().startsWith("prueba.admin.") ||
-            !request.queue().startsWith("prueba.admin.")) {
+    public void crearCola(QueueRequest request) {
 
-            throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "Solo se permiten bindings de prueba");
+        validarNombre(request.name());
+        protegerCola(request.name());
+
+        Queue queue = new Queue(request.name(), true);
+
+        try {
+            rabbitAdmin.declareQueue(queue);
+
+        } catch (AmqpException ex) {
+            throw errorRabbitMQ(ex);
+        }
+    }
+
+    public void eliminarCola(String nombre) {
+
+        validarNombre(nombre);
+        protegerCola(nombre);
+
+        try {
+            if (rabbitAdmin.getQueueProperties(nombre) == null) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La cola no existe: " + nombre);
+            }
+
+            boolean eliminada = rabbitAdmin.deleteQueue(nombre);
+
+            if (!eliminada) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No se pudo eliminar la cola");
+            }
+
+        } catch (AmqpException ex) {
+            throw errorRabbitMQ(ex);
+        }
+    }
+
+    // =====================================================
+    // ADMINISTRACIÓN DE EXCHANGES
+    // =====================================================
+
+    public void crearExchange(ExchangeRequest request) {
+
+        validarNombre(request.name());
+        protegerExchange(request.name());
+
+        Exchange exchange;
+
+        switch (request.type().toLowerCase()) {
+
+            case "direct":
+                exchange = new DirectExchange(
+                        request.name(), true, false);
+                break;
+
+            case "topic":
+                exchange = new TopicExchange(
+                        request.name(), true, false);
+                break;
+
+            case "fanout":
+                exchange = new FanoutExchange(
+                        request.name(), true, false);
+                break;
+
+            default:
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Tipo inválido. Usa direct, topic o fanout");
         }
 
-        // Comprobar que la cola existe.
+        try {
+            rabbitAdmin.declareExchange(exchange);
+
+        } catch (AmqpException ex) {
+            throw errorRabbitMQ(ex);
+        }
+    }
+
+    public void eliminarExchange(String nombre) {
+
+        validarNombre(nombre);
+        protegerExchange(nombre);
+
+        // Consultar existencia mediante RabbitMQ Management.
+        if (!managementService.existeExchange(nombre)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El exchange no existe: " + nombre);
+        }
+
+        try {
+            boolean eliminado = rabbitAdmin.deleteExchange(nombre);
+
+            if (!eliminado) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No se pudo eliminar el exchange");
+            }
+
+        } catch (AmqpException ex) {
+            throw errorRabbitMQ(ex);
+        }
+    }
+
+    // =====================================================
+    // ADMINISTRACIÓN DE BINDINGS
+    // =====================================================
+
+    private void validarBinding(BindingRequest request) {
+
+        validarNombre(request.exchange());
+        validarNombre(request.queue());
+
+        // Por seguridad, durante las pruebas solo se
+        // permiten bindings de recursos de laboratorio.
+        if (!request.exchange().startsWith("prueba.admin.") ||
+                !request.queue().startsWith("prueba.admin.")) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Solo se permiten bindings de prueba");
+        }
+
         if (rabbitAdmin.getQueueProperties(request.queue()) == null) {
 
             throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "La cola indicada no existe");
+                    HttpStatus.NOT_FOUND,
+                    "La cola no existe: " + request.queue());
+        }
+
+        if (!managementService.existeExchange(request.exchange())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El exchange no existe: " + request.exchange());
         }
     }
 
     public void crearBinding(BindingRequest request) {
 
-        validarBinding(request);
+        try {
+            validarBinding(request);
 
-        Binding binding = new Binding(
-            request.queue(),
-            Binding.DestinationType.QUEUE,
-            request.exchange(),
-            request.routingKey(),
-            null
-        );
+            Binding binding = new Binding(
+                    request.queue(),
+                    Binding.DestinationType.QUEUE,
+                    request.exchange(),
+                    request.routingKey(),
+                    null
+            );
 
-        rabbitAdmin.declareBinding(binding);
+            rabbitAdmin.declareBinding(binding);
+
+        } catch (AmqpException ex) {
+            throw errorRabbitMQ(ex);
+        }
     }
 
+    
     public void eliminarBinding(BindingRequest request) {
 
+        // 1. Validar recursos y existencia de cola/exchange
         validarBinding(request);
 
-        Binding binding = new Binding(
-            request.queue(),
-            Binding.DestinationType.QUEUE,
-            request.exchange(),
-            request.routingKey(),
-            null
+        // 2. Comprobar si existe el binding exacto
+        boolean existe = managementService.existeBinding(
+                request.exchange(),
+                request.queue(),
+                request.routingKey()
         );
 
-        rabbitAdmin.removeBinding(binding);
+        if (!existe) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El binding no existe: "
+                        + request.exchange()
+                        + " -> "
+                        + request.queue()
+                        + " ("
+                        + request.routingKey()
+                        + ")"
+            );
+        }
+
+        // 3. Construir el binding
+        Binding binding = new Binding(
+                request.queue(),
+                Binding.DestinationType.QUEUE,
+                request.exchange(),
+                request.routingKey(),
+                null
+        );
+
+        // 4. Eliminar binding en RabbitMQ
+        try {
+            rabbitAdmin.removeBinding(binding);
+
+        } catch (AmqpException ex) {
+            throw errorRabbitMQ(ex);
+        }
     }
 
+
+    // =====================================================
+    // MANEJO DE ERRORES DEL BROKER
+    // =====================================================
+
+    private ResponseStatusException errorRabbitMQ(AmqpException ex) {
+
+        return new ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "No se pudo completar la operación en RabbitMQ",
+                ex);
+    }
 }
