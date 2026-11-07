@@ -45,7 +45,7 @@ describe('Pedidos360', () => {
 
   it('muestra inicio de sesión sin exponer tokens', async () => {
     const fixture = await iniciar();
-    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Gestión de pedidos');
+    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('La tecnología que necesitas.');
     expect(fixture.nativeElement.textContent).toContain('Iniciar sesión');
     expect(fixture.nativeElement.querySelector('textarea')).toBeNull();
   });

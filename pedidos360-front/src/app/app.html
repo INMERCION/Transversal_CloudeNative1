@@ -1,99 +1,430 @@
 <main class="container">
-  <header>
-    <div><p class="eyebrow">PEDIDOS360</p><h1>Gestión de pedidos</h1></div>
-    @if (autenticado()) {
-      <div class="session"><span>{{ usuario() }}</span><button type="button" (click)="logout()">Cerrar sesión</button></div>
-    }
-  </header>
-
-  @if (error()) { <p class="notice error" role="alert">{{ error() }}</p> }
-  @if (mensaje()) { <p class="notice success" role="status">{{ mensaje() }}</p> }
 
   @if (verificandoSesion()) {
-    <p role="status">Verificando sesión…</p>
+    <div class="loading-screen">
+      <div class="loader"></div>
+      <p>Preparando tu experiencia...</p>
+    </div>
   } @else if (!autenticado()) {
-    <section class="card"><h2>Administra tus pedidos</h2>
-      <p>Inicia sesión para consultar y gestionar pedidos.</p>
-      <button type="button" class="primary" (click)="login()">Iniciar sesión</button>
-    </section>
-  }
 
-  @if (autenticado()) {
-    @if (!puede('create') || !puede('update') || !puede('delete')) {
-      <p class="notice">Algunas acciones no están disponibles con los permisos de tu sesión.</p>
+    <!-- NAVEGACIÓN -->
+    <nav class="navbar">
+      <a class="brand" href="#">
+        PEDIDOS<span>360</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#inicio">Inicio</a>
+        <a href="#categorias">Categorías</a>
+        <a href="#destacados">Destacados</a>
+      </div>
+
+      <button class="login-button" type="button" (click)="login()">
+        Iniciar sesión <span>→</span>
+      </button>
+    </nav>
+
+    <!-- MENSAJES -->
+    @if (error()) {
+      <p class="notice error" role="alert">{{ error() }}</p>
     }
+
+    <!-- HERO -->
+    <section class="hero" id="inicio">
+      <div class="hero-content">
+        <span class="hero-tag">
+          <span class="status-dot"></span>
+          TU TIENDA DE TECNOLOGÍA
+        </span>
+
+        <h1>
+          La tecnología que necesitas.
+          <span>El futuro que buscas.</span>
+        </h1>
+
+        <p>
+          Descubre productos tecnológicos diseñados para acompañarte
+          en cada momento. Innovación, calidad y tecnología en un solo lugar.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#destacados" class="btn-primary">
+            Explorar productos <span>→</span>
+          </a>
+
+          <a href="#categorias" class="btn-secondary">
+            Ver categorías
+          </a>
+        </div>
+
+        <div class="hero-benefits">
+          <div>
+            <strong>100%</strong>
+            <span>Experiencia digital</span>
+          </div>
+          <div>
+            <strong>360°</strong>
+            <span>Soluciones tecnológicas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="visual-glow"></div>
+        <div class="visual-label">TECNOLOGÍA 360°</div>
+
+        <div class="product-illustration">
+          <div class="laptop-screen">
+            <div class="screen-content">
+              <span>360</span>
+              <div></div>
+              <div></div>
+            </div>
+          </div>
+          <div class="laptop-base"></div>
+          <div class="floating-product phone">📱</div>
+          <div class="floating-product headphones">🎧</div>
+          <div class="floating-product watch">⌚</div>
+        </div>
+
+        <div class="visual-caption">
+          <span>01 / INNOVACIÓN</span>
+          <span>TECNOLOGÍA PARA TODOS</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORÍAS -->
+    <section class="categories-section" id="categorias">
+      <div class="section-heading">
+        <div>
+          <span class="section-tag">EXPLORA</span>
+          <h2>Encuentra lo que buscas.</h2>
+        </div>
+        <p>Todo lo que necesitas para conectar con el mundo.</p>
+      </div>
+
+      <div class="categories-grid">
+        <article class="category-card">
+          <div class="category-icon">💻</div>
+          <h3>Computación</h3>
+          <p>Notebooks, computadores y accesorios.</p>
+          <span>Explorar categoría ↗</span>
+        </article>
+
+        <article class="category-card">
+          <div class="category-icon">📱</div>
+          <h3>Smartphones</h3>
+          <p>Dispositivos móviles y complementos.</p>
+          <span>Explorar categoría ↗</span>
+        </article>
+
+        <article class="category-card">
+          <div class="category-icon">🎧</div>
+          <h3>Audio</h3>
+          <p>Audífonos, parlantes y sonido.</p>
+          <span>Explorar categoría ↗</span>
+        </article>
+
+        <article class="category-card">
+          <div class="category-icon">⌚</div>
+          <h3>Wearables</h3>
+          <p>Relojes inteligentes y tecnología personal.</p>
+          <span>Explorar categoría ↗</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- DESTACADOS -->
+    <section class="featured-section" id="destacados">
+      <div class="section-heading">
+        <div>
+          <span class="section-tag">SELECCIÓN ESPECIAL</span>
+          <h2>Tecnología destacada.</h2>
+        </div>
+        <p>Descubre algunos de los productos que puedes encontrar.</p>
+      </div>
+
+      <div class="featured-grid">
+        <article class="featured-card">
+          <div class="featured-image laptop-image">💻</div>
+          <div class="featured-info">
+            <span>COMPUTACIÓN</span>
+            <h3>Notebooks</h3>
+            <p>Potencia para tus proyectos y productividad.</p>
+          </div>
+        </article>
+
+        <article class="featured-card">
+          <div class="featured-image phone-image">📱</div>
+          <div class="featured-info">
+            <span>MÓVILES</span>
+            <h3>Smartphones</h3>
+            <p>Conectividad y tecnología en tus manos.</p>
+          </div>
+        </article>
+
+        <article class="featured-card">
+          <div class="featured-image audio-image">🎧</div>
+          <div class="featured-info">
+            <span>AUDIO</span>
+            <h3>Audífonos</h3>
+            <p>Una experiencia de sonido diferente.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- LLAMADO A LA ACCIÓN -->
+    <section class="login-banner">
+      <div>
+        <span class="section-tag">PEDIDOS360</span>
+        <h2>¿Listo para comenzar?</h2>
+        <p>Ingresa a tu cuenta y descubre tu experiencia tecnológica.</p>
+      </div>
+      <button class="btn-light" type="button" (click)="login()">
+        Iniciar sesión →
+      </button>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <a class="brand" href="#">PEDIDOS<span>360</span></a>
+      <p>Innovación y tecnología en un solo lugar.</p>
+      <span>© 2026 Pedidos360. Todos los derechos reservados.</span>
+    </footer>
+
+  } @else {
+
+    <!-- PANEL DE GESTIÓN PARA USUARIOS AUTENTICADOS -->
+
+    <header>
+      <div>
+        <p class="eyebrow">PEDIDOS360</p>
+        <h1>Gestión de pedidos</h1>
+      </div>
+      <div class="session">
+        <span>{{ usuario() }}</span>
+        <button type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </header>
+
+    @if (error()) {
+      <p class="notice error" role="alert">{{ error() }}</p>
+    }
+
+    @if (mensaje()) {
+      <p class="notice success" role="status">{{ mensaje() }}</p>
+    }
+
+    @if (!puede('create') || !puede('update') || !puede('delete')) {
+      <p class="notice">
+        Algunas acciones no están disponibles con los permisos de tu sesión.
+      </p>
+    }
+
     @if (puede('create') || editandoId() !== null) {
       <section class="card">
         <h2>{{ editandoId() === null ? 'Nuevo pedido' : 'Editar pedido #' + editandoId() }}</h2>
+
         <form #pedidoForm="ngForm" (ngSubmit)="guardar()">
           <fieldset [disabled]="ocupado()">
             <div class="fields">
-              <label>Cliente<input name="cliente" [(ngModel)]="form.cliente" required maxlength="120"></label>
-              <label>Producto<input name="producto" [(ngModel)]="form.producto" required maxlength="160"></label>
-              <label>Cantidad<input name="cantidad" type="number" [(ngModel)]="form.cantidad" required min="1" max="1000000" step="1"></label>
-              <label>Estado<select name="estado" [(ngModel)]="form.estado" required>
-                @for (estado of estados; track estado) { <option [value]="estado">{{ estado.replaceAll('_', ' ') }}</option> }
-              </select></label>
+              <label>Cliente
+                <input name="cliente" [(ngModel)]="form.cliente" required maxlength="120">
+              </label>
+              <label>Producto
+                <input name="producto" [(ngModel)]="form.producto" required maxlength="160">
+              </label>
+              <label>Cantidad
+                <input name="cantidad" type="number" [(ngModel)]="form.cantidad" required min="1" max="1000000" step="1">
+              </label>
+              <label>Estado
+                <select name="estado" [(ngModel)]="form.estado" required>
+                  @for (estado of estados; track estado) {
+                    <option [value]="estado">{{ estado.replaceAll('_', ' ') }}</option>
+                  }
+                </select>
+              </label>
             </div>
+
             <div class="actions">
               <button class="primary" type="submit" [disabled]="pedidoForm.invalid || ocupado()">
                 {{ editandoId() === null ? 'Crear pedido' : 'Guardar cambios' }}
               </button>
-              @if (editandoId() !== null) { <button type="button" (click)="cancelarEdicion()">Cancelar edición</button> }
+
+              @if (editandoId() !== null) {
+                <button type="button" (click)="cancelarEdicion()">Cancelar edición</button>
+              }
             </div>
           </fieldset>
         </form>
       </section>
     }
 
-    <section class="card" [attr.aria-busy]="ocupado()">
-      <div class="section-header"><h2>Pedidos <span class="count">{{ pedidos().length }}</span></h2>
-        @if (puede('read')) { <button type="button" (click)="consultarPedidos()" [disabled]="ocupado()">Actualizar lista</button> }
-      </div>
+    
+  <section class="card" [attr.aria-busy]="ocupado()">
+
+    <div class="section-header">
+      <h2>
+        Pedidos
+        <span class="count">{{ pedidos().length }}</span>
+      </h2>
+
       @if (puede('read')) {
-        <div class="search-bar">
-          <label for="buscar-pedidos">Buscar pedidos
-            <input #buscador id="buscar-pedidos" type="search"
-              placeholder="ID, cliente, producto o estado"
-              [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
-              aria-describedby="resultados-busqueda">
-          </label>
-          <button type="button" (click)="busqueda.set(''); buscador.focus()" [disabled]="!busqueda()">Limpiar</button>
-        </div>
-        <p id="resultados-busqueda" class="search-count" role="status">
-          Mostrando {{ pedidosFiltrados().length }} de {{ pedidos().length }} pedidos
+        <button
+          type="button"
+          (click)="consultarPedidos()"
+          [disabled]="ocupado()">
+          Actualizar lista
+        </button>
+      }
+    </div>
+
+    @if (puede('read')) {
+
+      <div class="search-bar">
+        <label for="buscar-pedidos">
+          Buscar pedidos
+          <input
+            #buscador
+            id="buscar-pedidos"
+            type="search"
+            placeholder="ID, cliente, producto o estado"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event)"
+            aria-describedby="resultados-busqueda">
+        </label>
+
+        <button
+          type="button"
+          (click)="busqueda.set(''); buscador.focus()"
+          [disabled]="!busqueda()">
+          Limpiar
+        </button>
+      </div>
+
+      <p id="resultados-busqueda" class="search-count" role="status">
+        Mostrando {{ pedidosFiltrados().length }}
+        de {{ pedidos().length }} pedidos
+      </p>
+    }
+
+    @if (ocupado()) {
+      <p role="status">Procesando...</p>
+    }
+
+    @if (!puede('read')) {
+      <p>No tienes permiso para consultar pedidos.</p>
+    }
+    @else if (pedidos().length === 0 && !ocupado()) {
+      <p>No hay pedidos para mostrar.</p>
+    }
+    @else if (pedidosFiltrados().length === 0 && !ocupado()) {
+      <p>No hay pedidos que coincidan con tu búsqueda.</p>
+    }
+
+    @if (eliminando(); as pedido) {
+      <div class="notice" role="alert">
+
+        <p>
+          ¿Eliminar el pedido #{{ pedido.id }}
+          de {{ pedido.cliente }}?
+          Esta acción es permanente.
         </p>
-      }
-      @if (ocupado()) { <p role="status">Procesando…</p> }
-      @if (!puede('read')) { <p>No tienes permiso para consultar pedidos.</p> }
-      @else if (pedidos().length === 0 && !ocupado()) { <p>No hay pedidos para mostrar.</p> }
-      @else if (pedidosFiltrados().length === 0 && !ocupado()) { <p>No hay pedidos que coincidan con tu búsqueda.</p> }
-      @if (eliminando(); as pedido) {
-        <div class="notice" role="alert">
-          <p>¿Eliminar el pedido #{{ pedido.id }} de {{ pedido.cliente }}? Esta acción es permanente.</p>
-          <div class="actions">
-            <button type="button" class="danger" (click)="confirmarEliminar()" [disabled]="ocupado()">Sí, eliminar</button>
-            <button type="button" (click)="eliminando.set(null)" [disabled]="ocupado()">Cancelar</button>
-          </div>
+
+        <div class="actions">
+          <button
+            type="button"
+            class="danger"
+            (click)="confirmarEliminar()"
+            [disabled]="ocupado()">
+            Sí, eliminar
+          </button>
+
+          <button
+            type="button"
+            (click)="eliminando.set(null)"
+            [disabled]="ocupado()">
+            Cancelar
+          </button>
         </div>
-      }
-      @if (pedidosFiltrados().length > 0 && puede('read')) {
-        <div class="table-scroll"><table>
-          <thead><tr><th>ID</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+
+      </div>
+    }
+
+    @if (pedidosFiltrados().length > 0 && puede('read')) {
+
+      <div class="table-scroll">
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+
           <tbody>
+
             @for (pedido of pedidosFiltrados(); track pedido.id) {
+
               <tr>
-                <td>#{{ pedido.id }}</td><td>{{ pedido.cliente }}</td><td>{{ pedido.producto }}</td>
-                <td>{{ pedido.cantidad }}</td><td><span class="badge">{{ pedido.estado.replaceAll('_', ' ') }}</span></td>
-                <td><div class="actions">
-                  @if (puede('update')) { <button type="button" (click)="editar(pedido)" [disabled]="ocupado()" [attr.aria-label]="'Editar pedido ' + pedido.id">Editar</button> }
-                  @if (puede('delete')) { <button type="button" class="danger" (click)="eliminando.set(pedido)" [disabled]="ocupado()" [attr.aria-label]="'Eliminar pedido ' + pedido.id">Eliminar</button> }
-                </div></td>
+                <td>#{{ pedido.id }}</td>
+
+                <td>{{ pedido.cliente }}</td>
+
+                <td>{{ pedido.producto }}</td>
+
+                <td>{{ pedido.cantidad }}</td>
+
+                <td>
+                  <span class="badge">
+                    {{ pedido.estado.replaceAll('_', ' ') }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="actions">
+
+                    @if (puede('update')) {
+                      <button
+                        type="button"
+                        (click)="editar(pedido)"
+                        [disabled]="ocupado()"
+                        [attr.aria-label]="'Editar pedido ' + pedido.id">
+                        Editar
+                      </button>
+                    }
+
+                    @if (puede('delete')) {
+                      <button
+                        type="button"
+                        class="danger"
+                        (click)="eliminando.set(pedido)"
+                        [disabled]="ocupado()"
+                        [attr.aria-label]="'Eliminar pedido ' + pedido.id">
+                        Eliminar
+                      </button>
+                    }
+
+                  </div>
+                </td>
               </tr>
+
             }
+
           </tbody>
-        </table></div>
-      }
-    </section>
+        </table>
+
+      </div>
+    }
+
+  </section>
   }
+
 </main>
