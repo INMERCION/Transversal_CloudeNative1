@@ -44,7 +44,6 @@ public class Pedidos360Controller {
                                         @AuthenticationPrincipal Jwt jwt) {
         Pedido pedido = service.crear(request);
         eventos.publicar("PEDIDO_CREADO", RabbitNames.RK_CREADO, pedido.getId(), jwt);
-        // Resolves correctly both directly and behind the /test gateway stage.
         return ResponseEntity.created(URI.create("pedidos/" + pedido.getId())).body(pedido);
     }
 

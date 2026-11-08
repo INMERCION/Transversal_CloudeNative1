@@ -123,7 +123,7 @@ public class RabbitAdminService {
         switch (request.type().toLowerCase()) {
 
             case "direct":
-                exchange = new DirectExchange(
+                exchange = new Exchange(Direct
                         request.name(), true, false);
                 break;
 
